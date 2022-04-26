@@ -119,6 +119,7 @@ func width(width int, value string) string {
 }
 
 // PrintUsage prints usage of cmd to w
+// 构建并打印使用说明
 func PrintUsage(w io.Writer, cmd *Command) {
 	buildCommandText(cmd)
 	bw := bufio.NewWriter(w)

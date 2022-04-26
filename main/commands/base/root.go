@@ -1,6 +1,7 @@
 package base
 
 // RootCommand is the root command of all commands
+// RootCommand变量包含一个存储Command类型的数组，其中存储了所有注册了的命令
 var RootCommand *Command
 
 func init() {

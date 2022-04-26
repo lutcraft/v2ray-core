@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
+	//变更RootCommand命令的说明
 	base.RootCommand.Long = "A unified platform for anti-censorship."
-	base.RegisterCommand(commands.CmdRun)
-	base.RegisterCommand(commands.CmdVersion)
-	base.RegisterCommand(commands.CmdTest)
-	base.SortLessFunc = runIsTheFirst
+	base.RegisterCommand(commands.CmdRun)     //注册v2ray run命令
+	base.RegisterCommand(commands.CmdVersion) //注册v2ray version命令
+	base.RegisterCommand(commands.CmdTest)    //注册v2ray test命令
+	base.SortLessFunc = runIsTheFirst         //用runIsTheFirst覆盖SortLessFunc的默认实现，此方法用来给定各种命令的排序方式
 	base.SortCommands()
 	base.Execute()
 }
