@@ -14,14 +14,18 @@ import (
 
 // Execute excute the commands
 func Execute() {
+	//解析命令参数
 	flag.Parse()
 	args := flag.Args()
+	//如果参数小于1（为0）
 	if len(args) < 1 {
 		PrintUsage(os.Stderr, RootCommand)
 		return
 	}
+	//获取命令参数
 	cmdName := args[0] // for error messages
 	if args[0] == "help" {
+		//如果第一个参数为help就打印 对应命令的help:比如v2ray help run
 		Help(os.Stdout, args[1:])
 		return
 	}
@@ -77,6 +81,7 @@ BigCmdLoop:
 
 // SortCommands sorts the first level sub commands
 func SortCommands() {
+	//用给定的方法排序RootCommand.Commands数组，方法由 SortLessFunc 给定
 	sort.Slice(RootCommand.Commands, func(i, j int) bool {
 		return SortLessFunc(RootCommand.Commands[i], RootCommand.Commands[j])
 	})

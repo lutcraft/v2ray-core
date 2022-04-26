@@ -18,6 +18,7 @@ import (
 )
 
 // CmdRun runs V2Ray with config
+// v2ray run 命令的实现，包含此命令的一切信息
 var CmdRun = &base.Command{
 	CustomFlags: true,
 	UsageLine:   "{{.Exec}} run [-c config.json] [-d dir]",
@@ -54,6 +55,7 @@ Examples:
 
 Use "{{.Exec}} help format-loader" for more information about format.
 	`,
+	// run命令的真正的入口
 	Run: executeRun,
 }
 
@@ -84,10 +86,11 @@ func executeRun(cmd *base.Command, args []string) {
 		base.Fatalf("Failed to start: %s", err)
 	}
 
+	//启动v2ray服务器
 	if err := server.Start(); err != nil {
 		base.Fatalf("Failed to start: %s", err)
 	}
-	defer server.Close()
+	defer server.Close() //延迟执行关闭流程
 
 	// Explicitly triggering GC to remove garbage from config loading.
 	runtime.GC()
@@ -95,6 +98,7 @@ func executeRun(cmd *base.Command, args []string) {
 	{
 		osSignals := make(chan os.Signal, 1)
 		signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
+		//发出系统信号
 		<-osSignals
 	}
 }

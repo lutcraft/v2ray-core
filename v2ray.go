@@ -326,11 +326,14 @@ func (s *Instance) GetFeature(featureType interface{}) features.Feature {
 // A V2Ray instance can be started only once. Upon closing, the instance is not guaranteed to start again.
 //
 // v2ray:api:stable
+// 启动v2ray服务器，引入所有已经注册的特性。如果此函数返回错误，v2ray服务器的状态是不可知的
+//v2ray服务器实例只能被启动一次，一旦关闭，这个v2ray不保证可以再次启动
 func (s *Instance) Start() error {
 	s.access.Lock()
 	defer s.access.Unlock()
-
+	//将实例状态设置为启动
 	s.running = true
+	//逐个启动特性
 	for _, f := range s.features {
 		if err := f.Start(); err != nil {
 			return err

@@ -16,6 +16,8 @@ import (
 
 // A Command is an implementation of a v2ray command
 // like v2ray run or v2ray version.
+// Command结构体是一个v2ray命令的实现
+// 比如v2ray run，或者v2ray version。
 type Command struct {
 	// Run runs the command.
 	// The args are the arguments after the command name.
@@ -35,6 +37,8 @@ type Command struct {
 	// Long is the long message shown in the 'go help <this-command>' output.
 	//
 	// Long supports go template syntax. It's recommended to use "{{.Exec}}", "{{.LongName}}" instead of hardcoding strings
+	// Long变量为 在go help <this-command>命令中的输出字符串
+	// Long变量支持go模版语法，推荐使用{{.Exec}}或者{{.LongName}}的写法，而不要使用硬编码
 	Long string
 
 	// Flag is a set of flags specific to this command.
