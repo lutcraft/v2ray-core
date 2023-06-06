@@ -7,7 +7,6 @@ import (
 
 	core "github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common"
-	"github.com/v2fly/v2ray-core/v5/common/net"
 	"github.com/v2fly/v2ray-core/v5/common/platform"
 	"github.com/v2fly/v2ray-core/v5/features/dns"
 	"github.com/v2fly/v2ray-core/v5/features/outbound"
@@ -220,10 +219,9 @@ func init() {
 					if err != nil {
 						return nil, newError("unable to load geodomain").Base(err)
 					}
-					rule.Domain = append(rule.Domain, geo.Domain...)
 				}
 			}
-			{
+			if v.PortList != "" {
 				portList := &cfgcommon.PortList{}
 				err := portList.UnmarshalText(v.PortList)
 				if err != nil {
@@ -231,7 +229,7 @@ func init() {
 				}
 				rule.PortList = portList.Build()
 			}
-			{
+			if v.SourcePortList != "" {
 				portList := &cfgcommon.PortList{}
 				err := portList.UnmarshalText(v.SourcePortList)
 				if err != nil {
@@ -240,12 +238,20 @@ func init() {
 				rule.SourcePortList = portList.Build()
 			}
 			rule.Domain = v.Domain
-			rule.Networks = net.ParseNetworks(v.Networks)
+			rule.GeoDomain = v.GeoDomain
+			rule.Networks = v.Networks.GetNetwork()
 			rule.Protocol = v.Protocol
 			rule.Attributes = v.Attributes
 			rule.UserEmail = v.UserEmail
 			rule.InboundTag = v.InboundTag
 			rule.DomainMatcher = v.DomainMatcher
+			switch s := v.TargetTag.(type) {
+			case *SimplifiedRoutingRule_Tag:
+				rule.TargetTag = &RoutingRule_Tag{s.Tag}
+			case *SimplifiedRoutingRule_BalancingTag:
+				rule.TargetTag = &RoutingRule_BalancingTag{s.BalancingTag}
+			}
+			routingRules = append(routingRules, rule)
 		}
 
 		fullConfig := &Config{

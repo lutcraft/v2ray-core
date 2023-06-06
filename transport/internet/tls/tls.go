@@ -17,6 +17,13 @@ type Conn struct {
 	*tls.Conn
 }
 
+func (c *Conn) GetConnectionApplicationProtocol() (string, error) {
+	if err := c.Handshake(); err != nil {
+		return "", err
+	}
+	return c.ConnectionState().NegotiatedProtocol, nil
+}
+
 func (c *Conn) WriteMultiBuffer(mb buf.MultiBuffer) error {
 	mb = buf.Compact(mb)
 	mb, err := buf.WriteMultiBuffer(c, mb)
@@ -66,6 +73,6 @@ func Server(c net.Conn, config *tls.Config) net.Conn {
 
 func init() {
 	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
-		return nil, newError("tls should be used with v2tls")
+		return NewTLSSecurityEngineFromConfig(config.(*Config))
 	}))
 }

@@ -71,6 +71,11 @@ func NewTimedUserValidator(hasher protocol.IDHash) *TimedUserValidator {
 	return tuv
 }
 
+// visible for testing
+func (v *TimedUserValidator) GetBaseTime() protocol.Timestamp {
+	return v.baseTime
+}
+
 func (v *TimedUserValidator) generateNewHashes(nowSec protocol.Timestamp, user *user) {
 	var hashValue [16]byte
 	genEndSec := nowSec + cacheDurationSec
@@ -247,7 +252,9 @@ func (v *TimedUserValidator) BurnTaintFuse(userHash []byte) error {
 	return ErrNotFound
 }
 
-/* ShouldShowLegacyWarn will return whether a Legacy Warning should be shown
+/*
+	ShouldShowLegacyWarn will return whether a Legacy Warning should be shown
+
 Not guaranteed to only return true once for every inbound, but it is okay.
 */
 func (v *TimedUserValidator) ShouldShowLegacyWarn() bool {

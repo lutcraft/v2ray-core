@@ -4,7 +4,6 @@ package command
 
 import (
 	"context"
-	"time"
 
 	grpc "google.golang.org/grpc"
 
@@ -44,22 +43,20 @@ func (s *LoggerServer) FollowLog(_ *FollowLogRequest, stream LoggerService_Follo
 	if !ok {
 		return newError("logger not support following")
 	}
-	var err error
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
 	f := func(msg cmlog.Message) {
-		err = stream.Send(&FollowLogResponse{
+		err := stream.Send(&FollowLogResponse{
 			Message: msg.String(),
 		})
+		if err != nil {
+			cancel()
+		}
 	}
 	follower.AddFollower(f)
 	defer follower.RemoveFollower(f)
-	ticker := time.NewTicker(time.Second)
-	for {
-		<-ticker.C
-		if err != nil {
-			ticker.Stop()
-			return nil
-		}
-	}
+	<-ctx.Done()
+	return nil
 }
 
 func (s *LoggerServer) mustEmbedUnimplementedLoggerServiceServer() {}

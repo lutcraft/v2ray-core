@@ -7,7 +7,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"hash/crc64"
-	"time"
 
 	core "github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common"
@@ -21,6 +20,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/common/signal"
 	"github.com/v2fly/v2ray-core/v5/common/task"
 	"github.com/v2fly/v2ray-core/v5/features/policy"
+	"github.com/v2fly/v2ray-core/v5/proxy"
 	"github.com/v2fly/v2ray-core/v5/proxy/vmess"
 	"github.com/v2fly/v2ray-core/v5/proxy/vmess/encoding"
 	"github.com/v2fly/v2ray-core/v5/transport"
@@ -149,8 +149,11 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 			return newError("failed to encode request").Base(err).AtWarning()
 		}
 
-		bodyWriter := session.EncodeRequestBody(request, writer)
-		if err := buf.CopyOnceTimeout(input, bodyWriter, time.Millisecond*100); err != nil && err != buf.ErrNotTimeoutReader && err != buf.ErrReadTimeout {
+		bodyWriter, err := session.EncodeRequestBody(request, writer)
+		if err != nil {
+			return newError("failed to start encoding").Base(err)
+		}
+		if err := buf.CopyOnceTimeout(input, bodyWriter, proxy.FirstPayloadTimeout); err != nil && err != buf.ErrNotTimeoutReader && err != buf.ErrReadTimeout {
 			return newError("failed to write first payload").Base(err)
 		}
 
@@ -181,8 +184,10 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		}
 		h.handleCommand(rec.Destination(), header.Command)
 
-		bodyReader := session.DecodeResponseBody(request, reader)
-
+		bodyReader, err := session.DecodeResponseBody(request, reader)
+		if err != nil {
+			return newError("failed to start encoding response").Base(err)
+		}
 		return buf.Copy(bodyReader, output, buf.UpdateActivity(timer))
 	}
 

@@ -4,13 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/v2fly/v2ray-core/v5/common/net/packetaddr"
-	"github.com/v2fly/v2ray-core/v5/transport/internet/udp"
-
 	core "github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"github.com/v2fly/v2ray-core/v5/common/net"
+	"github.com/v2fly/v2ray-core/v5/common/net/packetaddr"
 	"github.com/v2fly/v2ray-core/v5/common/protocol"
 	"github.com/v2fly/v2ray-core/v5/common/retry"
 	"github.com/v2fly/v2ray-core/v5/common/session"
@@ -20,6 +18,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/features/policy"
 	"github.com/v2fly/v2ray-core/v5/transport"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
+	"github.com/v2fly/v2ray-core/v5/transport/internet/udp"
 )
 
 // Client is a Socks5 client.
@@ -105,17 +104,7 @@ func (c *Client) Process(ctx context.Context, link *transport.Link, dialer inter
 	switch c.version {
 	case Version_SOCKS4:
 		if request.Address.Family().IsDomain() {
-			if d, ok := c.dns.(dns.ClientWithIPOption); ok {
-				d.SetFakeDNSOption(false) // Skip FakeDNS
-			} else {
-				newError("DNS client doesn't implement ClientWithIPOption")
-			}
-
-			lookupFunc := c.dns.LookupIP
-			if lookupIPv4, ok := c.dns.(dns.IPv4Lookup); ok {
-				lookupFunc = lookupIPv4.LookupIPv4
-			}
-			ips, err := lookupFunc(request.Address.Domain())
+			ips, err := dns.LookupIPWithOption(c.dns, request.Address.Domain(), dns.IPOption{IPv4Enable: true, IPv6Enable: false, FakeEnable: false})
 			if err != nil {
 				return err
 			} else if len(ips) == 0 {
@@ -147,10 +136,21 @@ func (c *Client) Process(ctx context.Context, link *transport.Link, dialer inter
 	if err := conn.SetDeadline(time.Now().Add(p.Timeouts.Handshake)); err != nil {
 		newError("failed to set deadline for handshake").Base(err).WriteToLog(session.ExportIDToError(ctx))
 	}
-	udpRequest, err := ClientHandshake(request, conn, conn)
-	if err != nil {
-		return newError("failed to establish connection to server").AtWarning().Base(err)
+
+	var udpRequest *protocol.RequestHeader
+	var err error
+	if request.Version == socks4Version {
+		err = ClientHandshake4(request, conn, conn)
+		if err != nil {
+			return newError("failed to establish connection to server").AtWarning().Base(err)
+		}
+	} else {
+		udpRequest, err = ClientHandshake(request, conn, conn)
+		if err != nil {
+			return newError("failed to establish connection to server").AtWarning().Base(err)
+		}
 	}
+
 	if udpRequest != nil {
 		if udpRequest.Address == net.AnyIP || udpRequest.Address == net.AnyIPv6 {
 			udpRequest.Address = dest.Address

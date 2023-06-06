@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lucas-clemente/quic-go"
+	"github.com/quic-go/quic-go"
 
 	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/net"
@@ -107,7 +107,7 @@ func Listen(ctx context.Context, address net.Address, port net.Port, streamSetti
 		MaxIdleTimeout:        time.Second * 45,
 		MaxIncomingStreams:    32,
 		MaxIncomingUniStreams: -1,
-		KeepAlive:             true,
+		KeepAlivePeriod:       time.Second * 15,
 	}
 
 	conn, err := wrapSysConn(rawConn.(*net.UDPConn), config)
